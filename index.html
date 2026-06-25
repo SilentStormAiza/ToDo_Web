@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do Reminder App</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #2c3e50, #4ca1af);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #f4f4f4;
+      margin-bottom: 10px;
+    }
+
+    form {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 500px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+
+    button {
+      background: #2e8b8b;
+      color: white;
+      padding: 12px 20px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #226b6b;
+    }
+
+    .task {
+      background: #fdfdfd;
+      border-left: 8px solid #2e8b8b;
+      padding: 15px 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+
+    .alarm {
+      border-left: 8px solid #e74c3c !important;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% { background-color: #fdfdfd; }
+      50% { background-color: #ffecec; }
+      100% { background-color: #fdfdfd; }
+    }
+
+    .time {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .delete-btn {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.3s ease;
+    }
+
+    .delete-btn:hover {
+      background-color: #a93226;
+    }
+
+    .section {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 30px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 15px;
+      backdrop-filter: blur(4px);
+    }
+
+    .section h2 {
+      color: #fff;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      padding-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📝 To-Do Reminder</h1>
+
+  <form id="todoForm">
+    <input type="text" id="title" placeholder="Task Title" required>
+    <textarea id="desc" placeholder="What needs to be done?" required></textarea>
+    <input type="datetime-local" id="deadline" required>
+    <button type="submit">Add Task</button>
+  </form>
+
+  <div class="section">
+    <h2>All Upcoming Tasks</h2>
+    <div id="allTasks"></div>
+  </div>
+
+  <div class="section">
+    <h2> Tasks Due in 1 Day</h2>
+    <div id="dueSoonTasks"></div>
+  </div>
+
+ <div class="section">
+  <h2> Past Deadline Tasks</h2>
+  <p style="color: #eee; font-size: 0.9rem; margin-top: -5px;">
+    ~Tasks will automatically removed after 3 days!
+  </p>
+  <div id="pastTasks"></div>
+</div>
+
+
+  <script>
+    const allTasksDiv = document.getElementById("allTasks");
+    const dueSoonDiv = document.getElementById("dueSoonTasks");
+    const pastTasksDiv = document.getElementById("pastTasks");
+    const alarmSoundUrl = 'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg';
+
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+   function renderTasks() {
+  allTasksDiv.innerHTML = '';
+  dueSoonDiv.innerHTML = '';
+  pastTasksDiv.innerHTML = '';
+
+  const now = new Date();
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+
+  // Filter out tasks older than 3 days past deadline
+  tasks = tasks.filter(task => {
+    const deadline = new Date(task.deadline);
+    if (now - deadline > threeDaysInMs && now > deadline) {
+      return false; // Remove from list
+    }
+    return true; // Keep
+  });
+
+  // Save updated task list
+  saveTasks();
+
+  tasks.forEach((task, index) => {
+    const deadline = new Date(task.deadline);
+    const diffInHours = (deadline - now) / (1000 * 60 * 60);
+    const isPast = now >= deadline;
+
+    const taskDiv = document.createElement("div");
+    taskDiv.className = "task";
+    if (isPast) taskDiv.classList.add("alarm");
+
+    taskDiv.innerHTML = `
+      <h3>${task.title}</h3>
+      <p>${task.desc}</p>
+      <p class="time">Deadline: ${deadline.toLocaleString()}</p>
+      <button class="delete-btn">Delete</button>
+    `;
+
+    taskDiv.querySelector(".delete-btn").addEventListener("click", () => {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    });
+
+    if (isPast) {
+      pastTasksDiv.appendChild(taskDiv);
+    } else if (diffInHours <= 24) {
+      dueSoonDiv.appendChild(taskDiv);
+    } else {
+      allTasksDiv.appendChild(taskDiv);
+    }
+
+    if (!isPast) {
+      const interval = setInterval(() => {
+        const now = new Date();
+        if (now >= deadline) {
+          taskDiv.classList.add("alarm");
+          const alarmSound = new Audio(alarmSoundUrl);
+          alarmSound.volume = 0.8;
+          alarmSound.play().catch(console.error);
+          clearInterval(interval);
+          renderTasks(); // Refresh to move task to new section
+        }
+      }, 1000);
+    }
+  });
+}
+
+
+    document.getElementById("todoForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const title = document.getElementById("title").value.trim();
+      const desc = document.getElementById("desc").value.trim();
+      const deadline = document.getElementById("deadline").value;
+
+      if (!title || !desc || !deadline) return;
+
+      tasks.push({ title, desc, deadline });
+      saveTasks();
+      renderTasks();
+      this.reset();
+    });
+
+    // Render tasks on page load
+    renderTasks();
+  </script>
+
+</body>
+</html>
