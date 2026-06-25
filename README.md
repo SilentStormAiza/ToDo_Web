@@ -19,13 +19,6 @@ A web-based To-Do Reminder application built using HTML, CSS, and JavaScript. It
 - Automatically removes tasks 3 days after their deadline.
 - Responsive and user-friendly interface.
 
-## Technologies Used
-
-- HTML5
-- CSS3
-- JavaScript
-- Local Storage API
-
 ## How It Works
 
 - Users create tasks by entering a title, description, and deadline.
