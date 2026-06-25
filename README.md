@@ -1,8 +1,7 @@
-# ToDo_Web
+# ToDo_WebApp
 Priority matters, let's make things work smarter!
 
 
-# To-Do Reminder App
 
 A web-based To-Do Reminder application built using HTML, CSS, and JavaScript. It helps users manage tasks, track deadlines, and receive reminders when tasks become overdue.
 
